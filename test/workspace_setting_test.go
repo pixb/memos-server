@@ -3,14 +3,20 @@ package test
 import (
 	"context"
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"testing"
+	"time"
 
+	v1pb "github.com/pixb/memos-server/proto/gen/api/v1"
 	storepb "github.com/pixb/memos-server/proto/gen/store"
 	"github.com/pixb/memos-server/server/profile"
 	"github.com/pixb/memos-server/store"
 	"github.com/pixb/memos-server/store/db"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/encoding/protojson"
 )
 
@@ -90,4 +96,52 @@ func UpsertGeneralWorkspaceSetting(t *testing.T, ctx context.Context, ts *store.
 	})
 	assert.NoError(t, err)
 	assert.NotNil(t, workspaceSetting)
+}
+
+// == http test
+func TestGetWorkspaceSettingHttp(t *testing.T) {
+	url := "http://localhost:8081/api/v1/workspace/settings/GENERAL"
+	resp, err := http.Get(url)
+	assert.NoError(t, err)
+	defer resp.Body.Close()
+	content, err := io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	fmt.Printf("\tGetWorkspaceSetting(),http,GENERAL: %s\n", string(content))
+
+	// memo related
+	memoRelatedUrl := "http://localhost:8081/api/v1/workspace/settings/MEMO_RELATED"
+	resp, err = http.Get(memoRelatedUrl)
+	assert.NoError(t, err)
+	defer resp.Body.Close()
+	content, err := io.ReadAll(resp.Body)
+	assert.NoError(t, err)
+	fmt.Printf("\tGetWorkspaceSetting(),http,MEMO_RELATED: %s\n", string(content))
+}
+
+// == grpc test==
+func initGrpcClient(t *testing.T) (*grpc.ClientConn, func()) {
+	// 1. Connect to server.
+	conn, err := grpc.NewClient(":8081", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	assert.NoError(t, err)
+	return conn, func() {
+		if conn != nil {
+			conn.Close()
+		}
+	}
+}
+
+func TestGetWorkspaceSetting(t *testing.T) {
+	conn, closeFunc := initGrpcClient(t)
+	defer closeFunc()
+	// 2. Create client.
+	client := v1pb.NewWorkspaceSettingServiceClient(conn)
+	// 3. Execute grpc call.
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	settingName := fmt.Sprintf("settings/%s", storepb.WorkspaceSettingKey_GENERAL.String())
+	workspaceSetting, err := client.GetWorkspaceSetting(ctx, &v1pb.GetWorkspaceSettingRequest{
+		Name: settingName,
+	})
+	assert.NoError(t, err)
+	fmt.Printf("\tTestGetWorkspaceSetting(), GENERAL, workspaceSetting: %v\n", workspaceSetting)
 }

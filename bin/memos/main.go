@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/pixb/memos-server/server"
 	"github.com/pixb/memos-server/server/profile"
 	"github.com/pixb/memos-server/server/version"
 	"github.com/pixb/memos-server/store"
@@ -81,13 +83,13 @@ var rootCmd = &cobra.Command{
 			return
 		}
 
-		// log.Println("server.NewServer(ctx, instanceProfile, storeInstance)")
-		// s, err := server.NewServer(ctx, instanceProfile, storeInstance)
-		// if err != nil {
-		// 	cancel()
-		// 	slog.Error("failed to create server", "error", err)
-		// 	return
-		// }
+		log.Println("server.NewServer(ctx, instanceProfile, storeInstance)")
+		s, err := server.NewServer(ctx, instanceProfile, storeInstance)
+		if err != nil {
+			cancel()
+			slog.Error("failed to create server", "error", err)
+			return
+		}
 
 		c := make(chan os.Signal, 1)
 		// Trigger graceful shutdown on SIGINT or SIGTERM.
@@ -95,13 +97,13 @@ var rootCmd = &cobra.Command{
 		// which is taken as the graceful shutdown signal for many systems, eg., Kubernetes, Gunicorn.
 		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 
-		// log.Println("s.Start(ctx)")
-		// if err := s.Start(ctx); err != nil {
-		// 	if err != http.ErrServerClosed {
-		// 		slog.Error("failed to start server", "error", err)
-		// 		cancel()
-		// 	}
-		// }
+		log.Println("s.Start(ctx)")
+		if err := s.Start(ctx); err != nil {
+			if err != http.ErrServerClosed {
+				slog.Error("failed to start server", "error", err)
+				cancel()
+			}
+		}
 		//
 		printGreetings(instanceProfile)
 
