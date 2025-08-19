@@ -27,7 +27,7 @@ func TestGetAuthStatusHttp(t *testing.T) {
 }
 
 // init grpc client
-func initGrpcClient(t *testing.T) (*grpc.ClientConn, func()) {
+func initGrpcClientWithAuthService(t *testing.T) (*grpc.ClientConn, func()) {
 	conn, err := grpc.NewClient(":8081", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
 	assert.NotNil(t, conn)
@@ -38,7 +38,7 @@ func initGrpcClient(t *testing.T) (*grpc.ClientConn, func()) {
 
 // get auth status grpc
 func TestGetAuthStatusGrpc(t *testing.T) {
-	conn, closeFunc := initGrpcClient(t)
+	conn, closeFunc := initGrpcClientWithAuthService(t)
 	defer closeFunc()
 	client := apiv1.NewAuthServiceClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)

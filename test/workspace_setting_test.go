@@ -113,13 +113,13 @@ func TestGetWorkspaceSettingHttp(t *testing.T) {
 	resp, err = http.Get(memoRelatedUrl)
 	assert.NoError(t, err)
 	defer resp.Body.Close()
-	content, err := io.ReadAll(resp.Body)
+	content, err = io.ReadAll(resp.Body)
 	assert.NoError(t, err)
 	fmt.Printf("\tGetWorkspaceSetting(),http,MEMO_RELATED: %s\n", string(content))
 }
 
 // == grpc test==
-func initGrpcClient(t *testing.T) (*grpc.ClientConn, func()) {
+func initGrpcClientWithWorkspaceSetting(t *testing.T) (*grpc.ClientConn, func()) {
 	// 1. Connect to server.
 	conn, err := grpc.NewClient(":8081", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
@@ -131,7 +131,7 @@ func initGrpcClient(t *testing.T) (*grpc.ClientConn, func()) {
 }
 
 func TestGetWorkspaceSetting(t *testing.T) {
-	conn, closeFunc := initGrpcClient(t)
+	conn, closeFunc := initGrpcClientWithWorkspaceSetting(t)
 	defer closeFunc()
 	// 2. Create client.
 	client := v1pb.NewWorkspaceSettingServiceClient(conn)

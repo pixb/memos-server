@@ -25,7 +25,7 @@ func TestGetWorkspaceProfileHttp(t *testing.T) {
 }
 
 // ================= grpc test ===========================
-func initGrpcClient(t *testing.T) (*grpc.ClientConn, func()) {
+func initGrpcClientWithWorkspaceProfile(t *testing.T) (*grpc.ClientConn, func()) {
 	// 1. Connect to server.
 	conn, err := grpc.NewClient(":8081", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	assert.NoError(t, err)
@@ -37,7 +37,7 @@ func initGrpcClient(t *testing.T) (*grpc.ClientConn, func()) {
 }
 
 func TestGetWorkspaceProfile(t *testing.T) {
-	conn, closeFunc := initGrpcClient(t)
+	conn, closeFunc := initGrpcClientWithWorkspaceProfile(t)
 	defer closeFunc()
 	// 2. Create client.
 	client := v1pb.NewWorkspaceServiceClient(conn)
